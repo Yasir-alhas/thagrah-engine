@@ -1,138 +1,212 @@
-# ثغرة · محرك المرحلة الأولى (تحليل المخطط)
-**Thagrah Phase 1 engine** — blueprint → Saudi rules engine → ALLaM (local) → weak points for expert approval.
+# Thagrah (ثغرة) — Phase 1 Engine
 
-يحلّ هذا المحرك محلّ استدعاء الذكاء الاصطناعي السحابي السابق في المرحلة الأولى. كل شيء يعمل **على الجهاز نفسه دون أي اتصال سحابي**.
+**Blueprint security analysis grounded in Saudi regulation.**
+Thagrah reads a facility blueprint, finds its security weak points before approval, and hands each one to a security expert to approve or accept as a risk. The approved weak points then become the zones that Phase 2 (live camera monitoring) watches.
+
+This repository contains Phase 1. It runs entirely on the local machine, with no cloud calls.
 
 ---
 
-## 1. وش يسوي؟ (مطابق لخانات البوستر)
+## Overview
 
-| خانة البوستر (Phase 1) | في الكود | ملاحظة |
+| Stage | Component | Description |
 |---|---|---|
-| Blueprint (Image today) | `POST /analyze/image` أو `POST /read` | صورة PNG/JPG |
-| **AI blueprint reader** | `thagrah_engine/reader.py`: نموذج الرؤية المفتوح **Qwen3-VL** يعمل محلياً | يطلّع مسودة (غرف، أبواب، سور). **يؤكدها شخص** قبل الاعتماد |
-| **Coverage & compliance** · الـ16 موقعاً | `geometry.py` + `rules.py` | مجال رؤية كل كاميرا محسوب هندسياً مع حجب الجدران، ثم فحص **المادة 2 من اللائحة التنفيذية لنظام كاميرات المراقبة** (16 موقعاً) و**المادة 6 من النظام** (أماكن يُمنع تصويرها) |
-| **Risk & scenario** · Severity, exploit path, fix | `graph.py` (أقصر مسار للمتسلل) + `rules.py` + `narrate.py` | الخطورة والمسار يحددها المحرك؛ **نموذج علّام ALLaM-7B السعودي** يكتب السبب والسيناريو والإجراء بالعربي محلياً |
-| **Expert approval** | تطبيق الفريق (موجود) | كل ثغرة تخرج بحالة `معلّقة` |
-| One-time calibration → Phase 2 | حقل `monitor` في كل ثغرة | منطقة المراقبة ونوعها (خط عبور / منطقة محظورة) والكاميرا التي تراها، أو **كاميرا مقترحة** إن لم توجد |
-
-ميزة العرض: في صفحة `/demo` تسحب أي كاميرا أو تدوّرها، فتتحدث الثغرات فوراً (نفس المدخلات = نفس النتيجة دائماً).
-
-**رفع مخطط جديد:** زر «رفع مخطط» في `/demo` ← نموذج الرؤية يقرأ الغرف والأبواب والسور (حتى دقيقة) ← زر «+ كاميرا» لإضافة الكاميرات وسحبها وتدويرها ← الثغرات تتحدث. القراءة مسودة: الأسماء العربية قد تُقرأ بأخطاء، والأبواب الداخلية غير المرسومة تُفترض على الممر.
+| Blueprint input | `POST /analyze/image`, `POST /read` | Plan image (PNG/JPG). CAD/PDF input is planned. |
+| AI blueprint reader | `thagrah_engine/reader.py` | A local vision-language model (Qwen3-VL) detects rooms, doors, gates and the site fence, and produces a draft scene for a person to confirm. |
+| Coverage and compliance | `geometry.py`, `rules.py` | Computes each camera's field of view with wall occlusion, then checks the 16 location types that the Saudi surveillance-camera regulation requires to be covered, and the rooms where cameras are prohibited. |
+| Risk and scenario | `graph.py`, `rules.py`, `narrate.py` | Finds the attacker's easiest route to sensitive rooms, assigns severity and a fix, and has ALLaM-7B write the Arabic reason, scenario and action. |
+| Expert approval | Thagrah application | Every finding is returned with status `معلّقة` (pending). |
+| Link to Phase 2 | `monitor` field | Each finding carries its monitoring zone (line crossing or restricted area) and the camera that sees it, or a proposed camera position. |
 
 ---
 
-## 2. التشغيل (Windows)
+## Technical contribution
+
+The system is an AI pipeline rather than a single trained model. Its contributions are:
+
+**1. Saudi regulation as machine-checkable knowledge.**
+The location requirements of the Implementing Regulation of the Law on the Use of Security Surveillance Cameras (Art. 2(1), 16 location types) and the Law's prohibited locations (Art. 6) are encoded as executable rules. The Saudi Building Code egress requirements (SBC 201 Ch. 10, SBC 801) act as a constraint on recommendations: the engine never proposes locking an emergency exit. Every finding cites the clause it is based on.
+
+**2. Spatial reasoning from the attacker's perspective.**
+- Visibility analysis: each camera's view is ray-cast against walls and view-blocking objects, which exposes blind spots precisely.
+- Adversarial path search: the facility is modelled as an access graph of rooms and doors, and the engine searches for the route an intruder would take to each sensitive room or asset (fewest access controls first, then shortest distance).
+
+**3. Neuro-symbolic architecture.**
+Neural models handle perception and language: a vision-language model reads the plan, and ALLaM writes the Arabic report text. A symbolic rules engine alone decides what counts as a weak point, where it is and how severe it is. The language model cannot add, remove or move findings; its output is validated, and rejected if it introduces numbers not present in the facts or recommends locking an exit. The result is explainable and identical across runs.
+
+**4. Reproducible compliance benchmark.**
+A generator produces test plans with known answers for every regulatory clause (compliant placement, missing camera, camera facing away, camera behind a wall, camera out of range), with randomized layouts.
+
+**5. Phase 1 to Phase 2 link.**
+Each weak point is emitted with a monitoring zone, so approved findings translate directly into the areas the camera-tracking phase watches.
+
+**6. Sovereign, on-premise operation.**
+All models run locally through Ollama. ALLaM is developed by SDAIA (Saudi Data and AI Authority). Plans and results never leave the machine.
+
+---
+
+## Results
+
+**Saudi compliance benchmark** (`python -m benchmark.saudi_benchmark --seeds 10`)
+
+| Metric | Result |
+|---|---|
+| Generated cases | 880 |
+| Violations detected | 100% |
+| False alarms on compliant plans | 0% |
+| Emergency-exit fixes recommending a lock | 0 of 40 |
+
+Per-clause results are in `benchmark/RESULTS.md`. The benchmark verifies that each regulatory clause is applied correctly; agreement with a human expert on real plans is measured separately with `eval/score.py`.
+
+**Blueprint reader** (demo office plan): 10 of 12 rooms located (IoU ≥ 0.5, mean IoU 0.67). Arabic labels are occasionally misread, so the draft is confirmed by a person before analysis.
+
+**Demo plans:** 22 findings on the administrative complex, 6 on the 3 m × 3 m booth. Analysis takes about 150 ms per plan without narration.
+
+---
+
+## Installation
+
+Requirements: Python 3.11+, Windows/Linux/macOS.
 
 ```bash
 python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m uvicorn thagrah_engine.api:app --host 127.0.0.1 --port 8100
+.venv/Scripts/pip install -r requirements.txt        # Linux/macOS: .venv/bin/pip
+.venv/Scripts/python -m uvicorn thagrah_engine.api:app --host 127.0.0.1 --port 8100
 ```
-- صفحة العرض: http://127.0.0.1:8100/demo
-- توثيق الـAPI: http://127.0.0.1:8100/docs
-- الاختبارات: `.venv\Scripts\python -m pytest`
 
-### النماذج المحلية (اختياري، للنصوص وقراءة الصور)
-1. ثبّت [Ollama](https://ollama.com) وشغّله (`ollama serve`).
-2. **علّام (ALLaM-7B، سدايا/هيوماين، Apache-2.0):** نزّل الملف `ALLaM-AI_ALLaM-7B-Instruct-preview-Q4_K_M.gguf` من
-   `huggingface.co/bartowski/ALLaM-AI_ALLaM-7B-Instruct-preview-GGUF`، ثم:
+On Windows, `start.bat` performs these steps and opens the demo.
+
+- Demo: http://127.0.0.1:8100/demo
+- API documentation: http://127.0.0.1:8100/docs
+- Tests: `.venv/Scripts/python -m pytest`
+
+### Local models (optional)
+
+The engine works without them, using Arabic templates for the report text. Narration for the two demo plans is pre-generated in `cache/narration.json`.
+
+1. Install [Ollama](https://ollama.com) and run `ollama serve`.
+2. ALLaM-7B (SDAIA/HUMAIN, Apache-2.0): download `ALLaM-AI_ALLaM-7B-Instruct-preview-Q4_K_M.gguf` from `huggingface.co/bartowski/ALLaM-AI_ALLaM-7B-Instruct-preview-GGUF`, then:
    ```
    echo FROM ./ALLaM-AI_ALLaM-7B-Instruct-preview-Q4_K_M.gguf > Modelfile
    ollama create allam:7b -f Modelfile
    ```
-3. **قارئ المخطط:** `ollama pull qwen3-vl:8b-instruct`
+3. Blueprint reader: `ollama pull qwen3-vl:8b-instruct`
 
-بدون Ollama يشتغل كل شيء، والنصوص تأتي من قوالب عربية جاهزة. نصوص علّام للمخططين التجريبيين محفوظة مسبقاً في `cache/narration.json`، فالعرض في البوث يشتغل حتى بدون كرت شاشة.
-
-| المتغير | الافتراضي |
+| Environment variable | Default |
 |---|---|
 | `THAGRAH_OLLAMA` | `http://127.0.0.1:11434` |
 | `THAGRAH_LLM` | `allam:7b` |
 | `THAGRAH_VLM` | `qwen3-vl:8b-instruct` |
 
+A GPU with 8–12 GB of memory is recommended for the models. Narration takes roughly 5–8 seconds per finding on first run and is cached afterwards.
+
 ---
 
-## 3. الربط مع الـbackend (لنغم)
+## Integration
 
-### الاستدعاء البديل للاستدعاء السابق (نفس الشكل: صورة + كاميرات)
+### Image and camera list (drop-in for the previous analysis call)
 ```
-POST /analyze/image   (multipart/form-data)
-  image    = ملف المخطط
-  cameras  = '[{"name":"البوابة الرئيسية","x":400,"y":455,"angle":-90}, ...]'
-  narrate  = true        ← علّام يكتب النصوص (أبطأ: ~5–8 ث لكل ثغرة أول مرة)
-  scene_id = office      ← اختياري: لمخطط مؤكد مسبقاً بدل قراءة الصورة
+POST /analyze/image        multipart/form-data
+  image     plan image
+  cameras   JSON list, e.g. [{"name":"Main gate","x":400,"y":455,"angle":-90}]
+  narrate   true | false   (ALLaM writes the report text)
+  scene_id  optional: use a confirmed scene instead of reading the image
 ```
 
-### الاستدعاء الأساسي (مخطط مؤكد)
+### Confirmed scene
 ```
-POST /analyze   (JSON)
+POST /analyze              application/json
 {"scene_id": "booth", "cameras": [...], "narrate": false}
-أو {"scene": {...مخطط كامل...}, "cameras": [...]}
+{"scene": { ...full scene... }, "cameras": [...]}
 ```
 
-### شكل الرد
+### Other endpoints
+`GET /health` · `GET /scenes` · `GET /scenes/{id}` · `POST /read` (image → draft scene) · `GET /demo`
+
+### Response
 ```json
-{"findings": [{
-   "id": "V-01", "title": "...", "x": 590, "y": 267,
-   "severity": "حرج", "zone": "...", "category": "مسارات الوصول",
-   "confidence": "متوسطة", "reason": "...", "scenario": "...", "action": "...", "status": "معلّقة",
-   "rule_id": "ROUTE", "regulation_ref": "...", "severity_level": "حرجة",
-   "evidence": {"kind": "route", "path": [[770,330], ...]},
-   "monitor": {"zone_type": "line_crossing", "polygon": [...], "camera_id": null,
-               "proposed_camera": {"x": 610, "y": 250, "angle": 135}}
- }],
- "coverage": {"C1": [[x,y], ...]},
- "meta": {"total_findings": 22, "narration": "allam", "runs_on": "local (no cloud calls)"}}
+{
+  "findings": [{
+    "id": "V-01", "title": "...", "x": 590, "y": 267,
+    "severity": "حرج", "zone": "...", "category": "مسارات الوصول",
+    "confidence": "متوسطة", "reason": "...", "scenario": "...", "action": "...",
+    "status": "معلّقة",
+    "rule_id": "ROUTE", "regulation_ref": "...", "severity_level": "حرجة",
+    "evidence": {"kind": "route", "path": [[770, 330], [740, 300]]},
+    "monitor": {"zone_type": "line_crossing", "polygon": [], "camera_id": null,
+                "proposed_camera": {"x": 610, "y": 250, "angle": 135}}
+  }],
+  "coverage": {"C1": [[400, 453], [312, 365]]},
+  "meta": {"total_findings": 22, "narration": "allam", "runs_on": "local (no cloud calls)"}
+}
 ```
-الحقول الأولى (`title, x, y, severity, zone, category, confidence, reason, scenario, action`) هي نفس ما يعرضه التطبيق اليوم، والباقي إضافات يقدر التطبيق يتجاهلها.
+The first ten fields match the application's existing format; the remaining fields are additions that can be ignored.
 
-الاصطلاحات (نفس التطبيق): صورة 800×500، الشمال أعلى. زاوية الكاميرا: 0 شرق، 90 جنوب، −90 شمال، 180 غرب.
+**Conventions:** 800 × 500 coordinate space, north up. Camera angle: 0 = east, 90 = south, −90 = north, 180 = west.
 
-### استخدام مباشر من بايثون (بدل HTTP)
+### Python
 ```python
 from thagrah_engine.engine import analyze
 from thagrah_engine.scene import load_scene
+
 result = analyze(load_scene("scenes/office.json"), cameras=app_cameras, narrate=True)
 ```
 
----
-
-## 4. القياس
-
-### (أ) المعيار السعودي: `python -m benchmark.saudi_benchmark --seeds 10`
-880 مخطط اختبار مولّد بجواب معروف مسبقاً: لكل بند من الـ16 في المادة 2 من اللائحة، والمادة 6 (الأماكن المحظورة)، ومسارات بلا تحكم دخول. الكاميرا إما موضوعة صح، أو مفقودة، أو معكوسة، أو خلف جدار، أو بعيدة.
-**النتيجة الحالية (`benchmark/RESULTS.md`): كشف 100% من المخالفات، 0% إنذارات خاطئة، و0 حلول تقترح قفل مخرج طوارئ (من 40).**
-هذا يقيس أن المحرك يطبّق كل بند بشكل صحيح، وليس تطابقاً مع رأي خبير.
-
-### (ب) مقابل قائمة خبير: `python -m eval.score --scene <scene.json> --expert <expert.json>`
-يحسب أهداف البوستر: نسبة ثغرات الخبير المكتشفة (الهدف ≥93%)، وتطابق الخطورة (الهدف ≥88%)، والثغرات الإضافية، وثبات النتيجة بين التشغيلات.
-المطابقة صارمة: نفس المكان (≤80 بكسل) **ونفس نوع الثغرة**.
-على أمثلة الفريق الأربعة للمخطط التجريبي: **2 من 4** (الخطورة 2/2). الفائتتان: وهج على «كاميرا المواقف» وهي غير موجودة في بيانات الكاميرات، وسياج منخفض لا يظهر ارتفاعه في المخطط (المحرك يبلّغ عن السياج الغربي على بعد ~18 م من نقطة المثال).
-**للمخططين الحقيقيين:** حوّلوا قائمة الخبير لملف JSON بنفس الشكل وشغّلوا السكربت عندكم. المخططات لا تخرج من جهازكم.
+### Demo interface
+`/demo` shows the plan, camera coverage and findings. Cameras can be dragged and rotated; findings update immediately. **Upload plan** runs the blueprint reader on a new image; **+ Camera** adds cameras to it. `demo/static/thagrah-demo.html` is a self-contained version with precomputed results that opens without a server (rebuild with `python -m tools.build_static_demo`).
 
 ---
 
-## 5. ما نقوله للحكّام (صياغة صحيحة)
-- ✅ «نظام ذكاء اصطناعي سعودي من بنائنا: محرك قواعد مبني على نظام كاميرات المراقبة ولائحته وكود البناء السعودي، يشتغل محلياً بنموذج **علّام** من سدايا، وقارئ مخططات بنموذج رؤية مفتوح.»
-- ✅ «يشتغل كاملاً داخل الجهاز، بدون أي استدعاء سحابي» (`/health` يرجع `"cloud_calls": false`).
-- ✅ «كل ثغرة لها بند نظامي ودليل مرسوم (مجال الكاميرا أو مسار المتسلل)، ونفس المخطط يعطي نفس النتيجة دائماً.»
-- ❌ لا تقولوا «درّبنا موديل» أو «مدرّب على كود البناء». لم يُدرَّب نموذج؛ القواعد مكتوبة من النصوص النظامية، وعلّام يُستخدم كما هو.
-- ❌ لا تسمّوا Qwen نموذجاً سعودياً.
-- قراءة الصورة **مسودة**: على المخطط التجريبي وجد 10 من 12 غرفة (متوسط تطابق المساحة 0.67)، مع أخطاء إملائية أحياناً في قراءة الأسماء العربية؛ لذلك يؤكدها شخص.
+## Rules
 
-## 6. ما لم يُنفّذ (Future Work)
-قراءة CAD/PDF، وارتفاع السياج والإضاءة الفعلية (لا تظهر في صورة المخطط)، و9 من 35 ثغرة في ورقة الفريق تحتاج بيانات غير موجودة في الصورة (التفاصيل في `rules/catalog.json`، حقل `implemented`).
+| Rule | Checks | Basis |
+|---|---|---|
+| A2 | Coverage of the 16 required location types | Implementing Regulation, Art. 2(1) |
+| A6 | Cameras viewing prohibited rooms | Surveillance Cameras Law, Art. 6 |
+| ROUTE | Route from outside to a sensitive room or asset with no access control | Layered protection |
+| BLIND | Unobserved area beside a sensitive door or asset | Coverage analysis |
+| PERIM | Uncovered stretch of fence, per side | Perimeter protection |
+| ADJ | Sensitive room sharing a wall with a loading or service area | Regulation Art. 2(1-ح, 1-ي) |
+| MULTI | Sensitive room with more than one entrance | Access control |
+| GATE | External door or gate with no camera (outside the Law's scope) | Perimeter protection |
+| SPOF | Sensitive door or asset seen by only one camera | Redundant coverage |
+| OBSTRUCT | Object blocking a large share of a camera's view | IEC 62676-4 practice |
+| GLARE | Outdoor camera facing the sunrise or sunset band | Solar geometry for Riyadh (24.7° N) |
+| LIGHT | Plan notes variable or poor lighting | Field verification |
 
-## 7. الملفات
+The full catalogue of 35 weak-point types and their implementation status is in `rules/catalog.json`. Sources are documented in `docs/SAUDI_SOURCES.md`.
+
+---
+
+## Evaluation against an expert
+
+```bash
+python -m eval.score --scene <scene.json> --expert <expert.json> [--runs 3]
 ```
-thagrah_engine/  scene.py · geometry.py · graph.py · rules.py · engine.py · narrate.py · reader.py · api.py
-scenes/          office.json/png (مجمع الأمل) · booth.json/png (البوث؛ أُزيل منه التظليل الأحمر الذي كان يكشف الجواب)
-rules/catalog.json   الـ16 موقعاً + المادة 6 + ثغرات ورقة الفريق الـ35 وحالة تنفيذها
-benchmark/       المعيار السعودي ونتائجه
-eval/score.py    القياس مقابل قائمة خبير
-cache/           نصوص علّام المحفوظة للمخططين التجريبيين
-docs/            DESIGN.md · SAUDI_SOURCES.md · ورقة الفريق
-demo/static/      صفحة عرض مستقلة (تفتح بدون سيرفر) + مقطعين GIF؛ تُبنى بـ python -m tools.build_static_demo
-tools/export_booth.py   سكربت التصدير من قاعدة البيانات (مع إصلاح الترميز العربي)
+The expert file is a JSON list with at least `title`, `x`, `y` and `severity`. A finding matches an expert point when it is within 80 px and of the same kind of weak point. The script reports recall (target ≥ 93%), severity agreement (target ≥ 88%), additional findings, and run-to-run consistency. Real plans remain on the local machine.
+
+---
+
+## Limitations
+
+- Image input only; CAD and PDF reading are planned.
+- The blueprint reader produces a draft that must be confirmed.
+- Fence height, lighting levels and other properties not shown in a plan image cannot be assessed; 9 of the 35 catalogued weak-point types depend on such data.
+- No model weights were trained. A planned next step is learning from expert approve/reject decisions, which the application already records.
+
+---
+
+## Repository structure
+
+```
+thagrah_engine/      scene, geometry, graph, rules, engine, narrate, reader, api
+scenes/              demo plans: administrative complex (office) and 3 m × 3 m booth
+rules/catalog.json   regulatory location types, prohibited rooms, 35 weak-point types
+benchmark/           Saudi compliance benchmark and results
+eval/                scoring against an expert list
+cache/               pre-generated ALLaM narration for the demo plans
+demo/                interactive demo and self-contained static version
+docs/                design, Saudi sources, team research sheet
+tools/               database export script, static demo builder
+tests/               unit and API tests
 ```
