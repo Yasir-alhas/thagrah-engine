@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "id": "booth",
+    "name": "بوث ثغرة 3م × 3م (تجريبي)",
+    "image": "booth.png",
+    "px_per_m": 120,
+    "facility_category": "بوث داخل معرض (المنظِّم مسؤول عن كاميرات المكان)",
+    "law_scope": false,
+    "defaults": {"fov": 90, "range_m_indoor": 4, "range_m_outdoor": 4, "id_range_m": 3}
+  },
+  "rooms": [
+    {"id": "booth", "name": "داخل البوث", "type": "booth",
+     "polygon": [[225, 75], [575, 75], [575, 425], [225, 425]], "indoor": true}
+  ],
+  "walls": [
+    [[225, 75], [575, 75]],
+    [[225, 75], [225, 425]],
+    [[575, 75], [575, 425]]
+  ],
+  "doors": [
+    {"id": "front", "name": "مدخل الزائر (واجهة مفتوحة)", "type": "main", "at": [400, 425],
+     "width": 350, "connects": ["outside", "booth"]}
+  ],
+  "cameras": [
+    {"id": "C1", "name": "كاميرا السقف", "x": 320, "y": 120, "angle": 90}
+  ],
+  "assets": [
+    {"id": "prize", "name": "صندوق الجائزة", "polygon": [[295, 165], [345, 165], [345, 215], [295, 215]],
+     "sensitive": true, "blocks_view": true},
+    {"id": "table", "name": "طاولة لابتوب العرض", "polygon": [[465, 150], [560, 150], [560, 215], [465, 215]],
+     "sensitive": false, "blocks_view": false}
+  ],
+  "notes": {
+    "lighting": "variable",
+    "lighting_text": "أضواء المعرض تتغير خلال اليوم",
+    "camera_assumption": "زاوية كاميرا السقف غير محددة في المخطط؛ افترضنا أنها تواجه المدخل (الجنوب)"
+  }
+}

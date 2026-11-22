@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "id": "office",
+    "name": "مجمع الأمل الإداري (مخطط تجريبي)",
+    "image": "office.png",
+    "px_per_m": 5,
+    "facility_category": "مبنى إداري لجهة حكومية (الوزارات والهيئات والمؤسسات العامة)",
+    "law_scope": true
+  },
+  "rooms": [
+    {"id": "office1", "name": "مكتب 1", "type": "office", "polygon": [[210, 90], [285, 90], [285, 190], [210, 190]]},
+    {"id": "office2", "name": "مكتب 2", "type": "office", "polygon": [[285, 90], [360, 90], [360, 190], [285, 190]]},
+    {"id": "meeting", "name": "قاعة الاجتماعات", "type": "meeting", "polygon": [[360, 90], [450, 90], [450, 190], [360, 190]]},
+    {"id": "server", "name": "غرفة الخوادم", "type": "server", "sensitive": true, "polygon": [[450, 90], [525, 90], [525, 190], [450, 190]]},
+    {"id": "vault", "name": "الخزنة", "type": "vault", "sensitive": true, "polygon": [[525, 90], [590, 90], [590, 190], [525, 190]]},
+    {"id": "corridor", "name": "الممر الرئيسي", "type": "corridor", "polygon": [[210, 190], [590, 190], [590, 220], [210, 220]]},
+    {"id": "reception", "name": "الاستقبال", "type": "reception", "polygon": [[210, 220], [320, 220], [320, 300], [210, 300]]},
+    {"id": "security", "name": "غرفة الأمن", "type": "security", "polygon": [[320, 220], [380, 220], [380, 300], [320, 300]]},
+    {"id": "warehouse", "name": "المستودع", "type": "storage", "polygon": [[380, 220], [480, 220], [480, 300], [380, 300]]},
+    {"id": "receiving", "name": "منطقة الاستلام", "type": "loading", "polygon": [[480, 220], [590, 220], [590, 300], [480, 300]]},
+    {"id": "site", "name": "ساحة المجمع", "type": "yard", "indoor": false, "polygon": [[30, 30], [770, 30], [770, 470], [30, 470]]},
+    {"id": "parking", "name": "مواقف السيارات", "type": "parking", "indoor": false, "polygon": [[55, 320], [255, 320], [255, 445], [55, 445]]},
+    {"id": "loading_yard", "name": "ساحة الشحن", "type": "loading", "indoor": false, "polygon": [[592, 220], [740, 220], [740, 360], [592, 360]]}
+  ],
+  "doors": [
+    {"id": "g_main", "name": "البوابة الرئيسية", "type": "gate", "at": [400, 470], "width": 100, "connects": ["outside", "site"]},
+    {"id": "g_staff", "name": "بوابة الموظفين", "type": "gate", "at": [30, 165], "width": 30, "connects": ["outside", "site"]},
+    {"id": "g_loading", "name": "بوابة الشحن الخلفية", "type": "vehicle_gate", "at": [770, 330], "width": 60, "connects": ["outside", "site"]},
+    {"id": "o_parking", "name": "مدخل المواقف", "type": "parking_entrance", "at": [155, 445], "width": 40, "connects": ["site", "parking"]},
+    {"id": "o_yard", "name": "مدخل ساحة الشحن", "type": "open", "at": [740, 300], "width": 60, "connects": ["site", "loading_yard"]},
+    {"id": "d_main", "name": "باب الاستقبال الرئيسي", "type": "main", "at": [265, 300], "width": 30, "connects": ["site", "reception"]},
+    {"id": "d_west", "name": "الباب الغربي للممر", "type": "secondary", "at": [210, 207], "width": 15, "connects": ["site", "corridor"]},
+    {"id": "d_emerg", "name": "مخرج الطوارئ", "type": "emergency_exit", "at": [400, 90], "width": 25, "connects": ["site", "meeting"]},
+    {"id": "d_recv", "name": "باب منطقة الاستلام", "type": "secondary", "at": [590, 267], "width": 35, "connects": ["loading_yard", "receiving"]},
+    {"id": "d_server", "name": "باب غرفة الخوادم", "type": "internal", "at": [512, 190], "width": 20, "connects": ["corridor", "server"]},
+    {"id": "d_office1", "name": "باب مكتب 1", "type": "internal", "at": [247, 190], "width": 14, "connects": ["corridor", "office1"], "drawn": false},
+    {"id": "d_office2", "name": "باب مكتب 2", "type": "internal", "at": [322, 190], "width": 14, "connects": ["corridor", "office2"], "drawn": false},
+    {"id": "d_meeting", "name": "باب قاعة الاجتماعات", "type": "internal", "at": [405, 190], "width": 14, "connects": ["corridor", "meeting"], "drawn": false},
+    {"id": "d_vault", "name": "باب الخزنة", "type": "internal", "at": [557, 190], "width": 14, "connects": ["corridor", "vault"], "drawn": false},
+    {"id": "d_reception", "name": "باب الاستقبال إلى الممر", "type": "internal", "at": [265, 220], "width": 14, "connects": ["corridor", "reception"], "drawn": false},
+    {"id": "d_security", "name": "باب غرفة الأمن", "type": "internal", "at": [350, 220], "width": 14, "connects": ["corridor", "security"], "drawn": false},
+    {"id": "d_warehouse", "name": "باب المستودع", "type": "internal", "at": [430, 220], "width": 14, "connects": ["corridor", "warehouse"], "drawn": false},
+    {"id": "d_receiving", "name": "باب منطقة الاستلام إلى الممر", "type": "internal", "at": [535, 220], "width": 14, "connects": ["corridor", "receiving"], "drawn": false}
+  ],
+  "fence": [[30, 30], [770, 30], [770, 470], [30, 470], [30, 30]],
+  "cameras": [
+    {"id": "C1", "name": "البوابة الرئيسية", "x": 400, "y": 455, "angle": -90},
+    {"id": "C2", "name": "الردهة", "x": 300, "y": 355, "angle": -45},
+    {"id": "C3", "name": "ممر الخوادم", "x": 470, "y": 205, "angle": 0},
+    {"id": "C4", "name": "الزاوية الشمالية الغربية", "x": 60, "y": 60, "angle": 40}
+  ],
+  "notes": {
+    "camera_fix": "C3 كانت في بيانات الفريق عند y=225 (داخل المستودع)؛ نقلناها إلى y=205 داخل الممر لأن اسمها «ممر الخوادم»",
+    "assumed_doors": "الأبواب الداخلية غير المرسومة في المخطط افترضناها على الممر (drawn=false)"
+  }
+}

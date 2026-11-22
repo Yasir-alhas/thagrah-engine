@@ -1,0 +1,161 @@
+<title>ثغرة · تحليل المخطط</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: blueprint stage + findings ledger, stacked on phones. Deliberately single dark theme (matches the poster's blueprint look). */
+  :root {
+    color-scheme: dark;
+    --bg: #0A1D23; --panel: #0F262D; --card: #132E36; --line: #24404A;
+    --text: #E6F1F3; --muted: #8FB3BA; --cyan: #37C6E0; --ok: #3DDC97;
+    --crit: #FF4D5E; --high: #F2994A; --med: #F2C94C; --ink: #04141A;
+    --sans: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.65 var(--sans); }
+  .wrap { max-width: 1320px; margin: 0 auto; padding-block: 16px 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  header { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .brand h1 { margin: 0; font-size: 26px; line-height: 1.1; }
+  .brand span { color: var(--muted); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+  .tabs { display: flex; gap: 6px; margin: 14px 0 10px; flex-wrap: wrap; }
+  .tabs button { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 7px 14px; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: var(--cyan); color: var(--ink); border-color: var(--cyan); font-weight: 700; }
+  .tabs button:focus-visible, input:focus-visible, .f:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 16px; align-items: start; }
+  @media (max-width: 960px) { main { grid-template-columns: minmax(0, 1fr); } }
+  .stage { min-width: 0; }
+  .plan { position: relative; width: 100%; aspect-ratio: 8 / 5; max-width: 100%; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); direction: ltr; }
+  .plan img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+  .plan svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ctl { margin-top: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; display: grid; gap: 6px; }
+  .ctl label { color: var(--muted); font-size: 13px; }
+  .ctl .row { display: flex; gap: 12px; align-items: center; }
+  .ctl input[type=range] { flex: 1; min-width: 0; accent-color: var(--cyan); direction: ltr; }
+  .ctl output { font-family: var(--mono); color: var(--cyan); min-width: 56px; text-align: center; font-variant-numeric: tabular-nums; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 2px 0; }
+  aside { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  .sum { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+  .sev { display: inline-block; border-radius: 6px; padding: 0 8px; font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .sev.c { background: var(--crit); } .sev.h { background: var(--high); } .sev.m { background: var(--med); }
+  .list { display: grid; gap: 8px; max-height: 70vh; overflow-y: auto; padding-inline-end: 2px; }
+  @media (max-width: 960px) { .list { max-height: none; } }
+  .f { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 10px 12px; cursor: pointer; text-align: start; color: inherit; font: inherit; width: 100%; }
+  .f[aria-expanded="true"] { border-color: var(--cyan); box-shadow: inset 0 0 0 1px var(--cyan); }
+  .f h3 { margin: 0 0 2px; font-size: 15px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.45; text-wrap: balance; }
+  .f .meta { color: var(--muted); font-size: 12px; }
+  .f .meta code { font-family: var(--mono); letter-spacing: .04em; }
+  .f .body { margin-top: 8px; font-size: 14px; display: grid; gap: 4px; }
+  .f .body b { color: var(--cyan); font-weight: 600; }
+  .f .ref { color: var(--muted); font-size: 12px; border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 6px; }
+  .new { color: var(--ok); font-size: 12px; font-weight: 600; }
+  footer { margin-top: 18px; color: var(--muted); font-size: 13px; max-width: 75ch; }
+  @media (prefers-reduced-motion: no-preference) { .plan svg .pulse { animation: p 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; } @keyframes p { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(2.2); } } }
+</style>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <div class="brand"><h1>ثغرة</h1><span>المرحلة 1 · تحليل المخطط قبل الاعتماد</span></div>
+    <div class="chips">
+      <span class="chip ok">محرك قواعد سعودي · يعمل محلياً</span>
+      <span class="chip">النصوص: نموذج علّام (ALLaM-7B)</span>
+    </div>
+  </header>
+
+  <div class="tabs" role="group" aria-label="المخطط">
+    <button id="tab-office" type="button" data-scene="office">مجمع الأمل الإداري</button>
+    <button id="tab-booth" type="button" data-scene="booth">بوث ثغرة 3م × 3م</button>
+  </div>
+
+  <main>
+    <section class="stage" aria-label="المخطط والثغرات">
+      <div class="plan" id="plan"><img id="img" alt="مخطط المنشأة"><svg id="ov" viewBox="0 0 800 500" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      <div class="ctl">
+        <label for="pose" id="ctl-label"></label>
+        <div class="row"><input type="range" id="pose" min="0" max="0" step="1" value="0"><output id="pose-out" for="pose"></output></div>
+      </div>
+      <p class="note">حرّك الشريط لتغيير الكاميرا. كل وضع نتيجة حقيقية من المحرك محسوبة مسبقاً؛ في النسخة المحلية تسحب الكاميرا بيدك وتتحدث الثغرات فوراً. الأزرق مجال رؤية الكاميرات، واضغط على أي ثغرة لترى دليلها بالأحمر والكاميرا المقترحة بالأخضر.</p>
+    </section>
+    <aside aria-label="الثغرات">
+      <div class="sum" id="sum"></div>
+      <div class="list" id="list"></div>
+    </aside>
+  </main>
+
+  <footer>
+    كل ثغرة يحددها محرك قواعد مبني على المادة 2 من اللائحة التنفيذية لنظام استخدام كاميرات المراقبة الأمنية (16 موقعاً) والمادة 6 من النظام، مع حساب هندسي لمجال كل كاميرا وحجب الجدران، وأقصر مسار للمتسلل. نموذج علّام يكتب السبب والسيناريو والإجراء فقط، ولا يضيف ثغرات. الحالة «معلّقة» حتى يعتمدها الخبير الأمني.
+  </footer>
+</div>
+
+<script>
+const DATA = __DATA__;
+const NS = 'http://www.w3.org/2000/svg';
+const SEV = { 'حرج': ['c', 'var(--crit)'], 'عالٍ': ['h', 'var(--high)'], 'متوسط': ['m', 'var(--med)'] };
+let sceneId = 'office', poseIdx = 0, open = null;
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const pts = a => a.map(p => p.join(',')).join(' ');
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; }
+
+function setScene(id) {
+  sceneId = id; open = null;
+  const s = DATA[id];
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scene === id)));
+  document.getElementById('img').src = s.image;
+  document.getElementById('ctl-label').textContent = s.control;
+  const r = document.getElementById('pose');
+  const start = Math.max(0, s.poses.findIndex(q => q.label === '0°'));
+  r.max = s.poses.length - 1; r.value = start; poseIdx = start;
+  render();
+}
+
+function render() {
+  const s = DATA[sceneId], p = s.poses[poseIdx], res = p.result;
+  document.getElementById('pose-out').textContent = p.label;
+  const b0 = Math.max(0, s.poses.findIndex(q => q.label === '0°'));
+  const base = new Set(s.poses[b0].result.findings.map(f => f.title));
+  const ov = document.getElementById('ov'); ov.innerHTML = '';
+  for (const poly of Object.values(res.coverage)) el('polygon', { points: pts(poly), fill: 'rgba(55,198,224,.18)', stroke: 'rgba(55,198,224,.6)', 'stroke-width': 0.8 }, ov);
+  const f = res.findings.find(x => x.key === open);
+  if (f) {
+    const ev = f.evidence || {};
+    if (ev.polygon && ev.polygon.length > 2) el('polygon', { points: pts(ev.polygon), fill: 'rgba(255,77,94,.35)', stroke: '#FF4D5E', 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, ov);
+    if (ev.path && ev.path.length > 1) el('polyline', { points: pts(ev.path), fill: 'none', stroke: '#FF4D5E', 'stroke-width': 3, 'stroke-dasharray': '7 5', 'stroke-linecap': 'round' }, ov);
+    const pc = f.monitor && f.monitor.proposed_camera;
+    if (pc) { const a = pc.angle * Math.PI / 180; el('circle', { cx: pc.x, cy: pc.y, r: 7, fill: 'none', stroke: '#3DDC97', 'stroke-width': 2, 'stroke-dasharray': '3 2' }, ov); el('line', { x1: pc.x, y1: pc.y, x2: pc.x + Math.cos(a) * 18, y2: pc.y + Math.sin(a) * 18, stroke: '#3DDC97', 'stroke-width': 2 }, ov); }
+  }
+  res.findings.forEach((x, i) => {
+    const col = { 'حرج': '#FF4D5E', 'عالٍ': '#F2994A', 'متوسط': '#F2C94C' }[x.severity] || '#F2C94C';
+    if (x.key === open) el('circle', { class: 'pulse', cx: x.x, cy: x.y, r: 10, fill: 'none', stroke: col, 'stroke-width': 2 }, ov);
+    el('circle', { cx: x.x, cy: x.y, r: x.key === open ? 11 : 8.5, fill: col, stroke: '#04141A', 'stroke-width': 1.5 }, ov);
+    const t = el('text', { x: x.x, y: x.y + 3.6, 'text-anchor': 'middle', 'font-size': 9.5, 'font-weight': 700, fill: '#04141A', 'font-family': 'monospace' }, ov); t.textContent = i + 1;
+  });
+  p.cameras.forEach(c => {
+    const a = c.angle * Math.PI / 180;
+    el('line', { x1: c.x, y1: c.y, x2: c.x + Math.cos(a) * 22, y2: c.y + Math.sin(a) * 22, stroke: '#37C6E0', 'stroke-width': 3, 'stroke-linecap': 'round' }, ov);
+    el('circle', { cx: c.x, cy: c.y, r: 7, fill: '#0A1D23', stroke: '#37C6E0', 'stroke-width': 3 }, ov);
+    const t = el('text', { x: c.x, y: c.y - 12, 'text-anchor': 'middle', 'font-size': 10, fill: '#37C6E0', 'font-weight': 700, 'font-family': 'monospace' }, ov); t.textContent = c.id;
+  });
+  const fs = res.findings, n = s => fs.filter(f => f.severity === s).length;
+  document.getElementById('sum').innerHTML = `<span class="sev c">حرج ${n('حرج')}</span><span class="sev h">عالٍ ${n('عالٍ')}</span><span class="sev m">متوسط ${n('متوسط')}</span><span class="chip">${fs.length} ثغرة · ${res.meta.law_scope ? 'يشمله نظام الكاميرات' : 'خارج نطاق نظام الكاميرات'}</span>`;
+  document.getElementById('list').innerHTML = fs.map((x, i) => {
+    const [cls] = SEV[x.severity] || ['m'];
+    const mon = x.monitor || {};
+    const monTxt = mon.camera_id ? `المرحلة 2: تراقبها الكاميرا ${esc(mon.camera_id)}` : (mon.proposed_camera ? 'المرحلة 2: كاميرا مقترحة (بالأخضر)' : '');
+    const isOpen = x.key === open;
+    return `<button class="f" type="button" aria-expanded="${isOpen}" data-k="${esc(x.key)}">
+      <h3><span class="sev ${cls}">${esc(x.severity)}</span><span>${i + 1}. ${esc(x.title)}</span></h3>
+      <div class="meta">${esc(x.category)} · الثقة: ${esc(x.confidence)} · <code>${esc(x.rule_id)}</code>${poseIdx !== b0 && !base.has(x.title) ? ' · <span class="new">جديدة في هذا الوضع</span>' : ''}</div>
+      ${isOpen ? `<div class="body"><div><b>السبب:</b> ${esc(x.reason)}</div><div><b>السيناريو:</b> ${esc(x.scenario)}</div><div><b>الإجراء:</b> ${esc(x.action)}</div>${x.evidence && x.evidence.path_text ? `<div><b>المسار:</b> ${esc(x.evidence.path_text)}</div>` : ''}<div class="ref">${esc(x.regulation_ref)}${monTxt ? ' · ' + monTxt : ''}</div></div>` : ''}
+    </button>`;
+  }).join('');
+  document.querySelectorAll('.f').forEach(b => b.addEventListener('click', () => { open = open === b.dataset.k ? null : b.dataset.k; render(); }));
+}
+
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => setScene(b.dataset.scene)));
+document.getElementById('pose').addEventListener('input', e => { poseIdx = +e.target.value; render(); });
+setScene('office');
+</script>

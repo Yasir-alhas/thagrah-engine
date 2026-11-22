@@ -1,0 +1,815 @@
+{
+ "detections": [
+  {
+   "label": "مجمع الأمل الإداري (مخطط تجريبي)",
+   "kind": "room",
+   "bbox_2d": [
+    572,
+    93,
+    832,
+    127
+   ]
+  },
+  {
+   "label": "مخرج طوارئ",
+   "kind": "door",
+   "bbox_2d": [
+    458,
+    148,
+    535,
+    175
+   ]
+  },
+  {
+   "label": "مكتب 1",
+   "kind": "room",
+   "bbox_2d": [
+    260,
+    180,
+    356,
+    377
+   ]
+  },
+  {
+   "label": "مكتب 2",
+   "kind": "room",
+   "bbox_2d": [
+    356,
+    180,
+    452,
+    377
+   ]
+  },
+  {
+   "label": "قاعة الاجتماعات",
+   "kind": "room",
+   "bbox_2d": [
+    452,
+    180,
+    548,
+    377
+   ]
+  },
+  {
+   "label": "غرفة الخوادم",
+   "kind": "room",
+   "bbox_2d": [
+    548,
+    180,
+    644,
+    377
+   ]
+  },
+  {
+   "label": "الخزنة",
+   "kind": "room",
+   "bbox_2d": [
+    644,
+    180,
+    740,
+    377
+   ]
+  },
+  {
+   "label": "منطقة حساسة",
+   "kind": "room",
+   "bbox_2d": [
+    572,
+    288,
+    644,
+    315
+   ]
+  },
+  {
+   "label": "منطقة حساسة",
+   "kind": "room",
+   "bbox_2d": [
+    644,
+    288,
+    740,
+    315
+   ]
+  },
+  {
+   "label": "الممر الرئيسي",
+   "kind": "room",
+   "bbox_2d": [
+    260,
+    377,
+    740,
+    420
+   ]
+  },
+  {
+   "label": "الاستقبال",
+   "kind": "room",
+   "bbox_2d": [
+    260,
+    420,
+    392,
+    598
+   ]
+  },
+  {
+   "label": "غرفة الأمن",
+   "kind": "room",
+   "bbox_2d": [
+    392,
+    420,
+    524,
+    598
+   ]
+  },
+  {
+   "label": "المستودع",
+   "kind": "room",
+   "bbox_2d": [
+    524,
+    420,
+    656,
+    598
+   ]
+  },
+  {
+   "label": "منطقة الاستلام",
+   "kind": "room",
+   "bbox_2d": [
+    656,
+    420,
+    740,
+    598
+   ]
+  },
+  {
+   "label": "ساحة الشحن",
+   "kind": "room",
+   "bbox_2d": [
+    740,
+    420,
+    932,
+    715
+   ]
+  },
+  {
+   "label": "مواصف السياارات",
+   "kind": "room",
+   "bbox_2d": [
+    66,
+    635,
+    320,
+    885
+   ]
+  },
+  {
+   "label": "بوابة الموطفيين",
+   "kind": "door",
+   "bbox_2d": [
+    32,
+    265,
+    52,
+    340
+   ]
+  },
+  {
+   "label": "بوابة الشحن الخلفية",
+   "kind": "door",
+   "bbox_2d": [
+    724,
+    500,
+    740,
+    575
+   ]
+  },
+  {
+   "label": "بوابة الرئيسيّة",
+   "kind": "door",
+   "bbox_2d": [
+    432,
+    935,
+    564,
+    960
+   ]
+  },
+  {
+   "label": "سورة المجمع",
+   "kind": "fence",
+   "bbox_2d": [
+    32,
+    50,
+    966,
+    940
+   ]
+  },
+  {
+   "label": "شمال",
+   "kind": "door",
+   "bbox_2d": [
+    892,
+    815,
+    940,
+    890
+   ]
+  }
+ ],
+ "scene": {
+  "meta": {
+   "id": "draft",
+   "name": "مخطط مقروء آلياً (مسودة تحتاج تأكيد)",
+   "image": null,
+   "width": 800,
+   "height": 500,
+   "px_per_m": 5.0,
+   "facility_category": "",
+   "law_scope": true,
+   "lat": 24.7,
+   "defaults": {
+    "fov": 90.0,
+    "range_m_indoor": 15.0,
+    "range_m_outdoor": 25.0,
+    "id_range_m": 12.0
+   }
+  },
+  "rooms": [
+   {
+    "id": "r1",
+    "name": "مكتب 1",
+    "type": "office",
+    "polygon": [
+     [
+      208.0,
+      90.0
+     ],
+     [
+      284.8,
+      90.0
+     ],
+     [
+      284.8,
+      188.5
+     ],
+     [
+      208.0,
+      188.5
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r2",
+    "name": "مكتب 2",
+    "type": "office",
+    "polygon": [
+     [
+      284.8,
+      90.0
+     ],
+     [
+      361.6,
+      90.0
+     ],
+     [
+      361.6,
+      188.5
+     ],
+     [
+      284.8,
+      188.5
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r3",
+    "name": "قاعة الاجتماعات",
+    "type": "meeting",
+    "polygon": [
+     [
+      361.6,
+      90.0
+     ],
+     [
+      438.4,
+      90.0
+     ],
+     [
+      438.4,
+      188.5
+     ],
+     [
+      361.6,
+      188.5
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r4",
+    "name": "غرفة الخوادم",
+    "type": "server",
+    "polygon": [
+     [
+      438.4,
+      90.0
+     ],
+     [
+      515.2,
+      90.0
+     ],
+     [
+      515.2,
+      188.5
+     ],
+     [
+      438.4,
+      188.5
+     ]
+    ],
+    "indoor": true,
+    "sensitive": true
+   },
+   {
+    "id": "r5",
+    "name": "الخزنة",
+    "type": "vault",
+    "polygon": [
+     [
+      515.2,
+      90.0
+     ],
+     [
+      592.0,
+      90.0
+     ],
+     [
+      592.0,
+      188.5
+     ],
+     [
+      515.2,
+      188.5
+     ]
+    ],
+    "indoor": true,
+    "sensitive": true
+   },
+   {
+    "id": "r6",
+    "name": "الممر الرئيسي",
+    "type": "corridor",
+    "polygon": [
+     [
+      208.0,
+      188.5
+     ],
+     [
+      592.0,
+      188.5
+     ],
+     [
+      592.0,
+      210.0
+     ],
+     [
+      208.0,
+      210.0
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r7",
+    "name": "الاستقبال",
+    "type": "reception",
+    "polygon": [
+     [
+      208.0,
+      210.0
+     ],
+     [
+      313.6,
+      210.0
+     ],
+     [
+      313.6,
+      299.0
+     ],
+     [
+      208.0,
+      299.0
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r8",
+    "name": "غرفة الأمن",
+    "type": "security",
+    "polygon": [
+     [
+      313.6,
+      210.0
+     ],
+     [
+      419.2,
+      210.0
+     ],
+     [
+      419.2,
+      299.0
+     ],
+     [
+      313.6,
+      299.0
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r9",
+    "name": "المستودع",
+    "type": "storage",
+    "polygon": [
+     [
+      419.2,
+      210.0
+     ],
+     [
+      524.8,
+      210.0
+     ],
+     [
+      524.8,
+      299.0
+     ],
+     [
+      419.2,
+      299.0
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r10",
+    "name": "منطقة الاستلام",
+    "type": "loading",
+    "polygon": [
+     [
+      524.8,
+      210.0
+     ],
+     [
+      592.0,
+      210.0
+     ],
+     [
+      592.0,
+      299.0
+     ],
+     [
+      524.8,
+      299.0
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "r11",
+    "name": "ساحة الشحن",
+    "type": "loading",
+    "polygon": [
+     [
+      592.0,
+      210.0
+     ],
+     [
+      745.6,
+      210.0
+     ],
+     [
+      745.6,
+      357.5
+     ],
+     [
+      592.0,
+      357.5
+     ]
+    ],
+    "indoor": false,
+    "sensitive": false
+   },
+   {
+    "id": "r12",
+    "name": "مواصف السياارات",
+    "type": "other",
+    "polygon": [
+     [
+      52.8,
+      317.5
+     ],
+     [
+      256.0,
+      317.5
+     ],
+     [
+      256.0,
+      442.5
+     ],
+     [
+      52.8,
+      442.5
+     ]
+    ],
+    "indoor": true,
+    "sensitive": false
+   },
+   {
+    "id": "site",
+    "name": "ساحة الموقع",
+    "type": "yard",
+    "polygon": [
+     [
+      25.6,
+      25.0
+     ],
+     [
+      772.8,
+      25.0
+     ],
+     [
+      772.8,
+      470.0
+     ],
+     [
+      25.6,
+      470.0
+     ]
+    ],
+    "indoor": false,
+    "sensitive": false
+   }
+  ],
+  "doors": [
+   {
+    "id": "d1",
+    "name": "مخرج طوارئ",
+    "type": "emergency_exit",
+    "at": [
+     397.2,
+     80.75
+    ],
+    "width": 61.60000000000002,
+    "connects": [
+     "r3",
+     "site"
+    ],
+    "controlled": false,
+    "drawn": true
+   },
+   {
+    "id": "d2",
+    "name": "بوابة الموطفيين",
+    "type": "gate",
+    "at": [
+     33.6,
+     151.25
+    ],
+    "width": 37.5,
+    "connects": [
+     "outside",
+     "site"
+    ],
+    "controlled": false,
+    "drawn": true
+   },
+   {
+    "id": "d3",
+    "name": "بوابة الشحن الخلفية",
+    "type": "secondary",
+    "at": [
+     585.6,
+     268.75
+    ],
+    "width": 37.5,
+    "connects": [
+     "r10",
+     "site"
+    ],
+    "controlled": false,
+    "drawn": true
+   },
+   {
+    "id": "d4",
+    "name": "بوابة الرئيسيّة",
+    "type": "gate",
+    "at": [
+     398.4,
+     473.75
+    ],
+    "width": 100.0,
+    "connects": [
+     "outside",
+     "site"
+    ],
+    "controlled": false,
+    "drawn": true
+   },
+   {
+    "id": "a1",
+    "name": "باب مكتب 1",
+    "type": "internal",
+    "at": [
+     249.4,
+     188.5
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r1"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a2",
+    "name": "باب مكتب 2",
+    "type": "internal",
+    "at": [
+     323.20000000000005,
+     188.5
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r2"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a3",
+    "name": "باب قاعة الاجتماعات",
+    "type": "internal",
+    "at": [
+     400.0,
+     188.5
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r3"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a4",
+    "name": "باب غرفة الخوادم",
+    "type": "internal",
+    "at": [
+     476.8,
+     188.5
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r4"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a5",
+    "name": "باب الخزنة",
+    "type": "internal",
+    "at": [
+     553.6,
+     188.5
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r5"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a6",
+    "name": "باب الاستقبال",
+    "type": "internal",
+    "at": [
+     260.8,
+     210.0
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r7"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a7",
+    "name": "باب غرفة الأمن",
+    "type": "internal",
+    "at": [
+     366.4,
+     210.0
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r8"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a8",
+    "name": "باب المستودع",
+    "type": "internal",
+    "at": [
+     472.0,
+     210.0
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r9"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "a9",
+    "name": "باب منطقة الاستلام",
+    "type": "internal",
+    "at": [
+     558.4,
+     210.0
+    ],
+    "width": 14.0,
+    "connects": [
+     "r6",
+     "r10"
+    ],
+    "controlled": false,
+    "drawn": false
+   },
+   {
+    "id": "or11",
+    "name": "مدخل ساحة الشحن",
+    "type": "open",
+    "at": [
+     668.8,
+     283.75
+    ],
+    "width": 1.0,
+    "connects": [
+     "site",
+     "r11"
+    ],
+    "controlled": false,
+    "drawn": false
+   }
+  ],
+  "walls": null,
+  "fence": [
+   [
+    25.6,
+    25.0
+   ],
+   [
+    772.8,
+    25.0
+   ],
+   [
+    772.8,
+    470.0
+   ],
+   [
+    25.6,
+    470.0
+   ],
+   [
+    25.6,
+    25.0
+   ]
+  ],
+  "cameras": [],
+  "assets": [],
+  "notes": {
+   "draft": "قرأه نموذج الرؤية المحلي؛ يجب أن يؤكده شخص قبل الاعتماد"
+  }
+ },
+ "error": null
+}

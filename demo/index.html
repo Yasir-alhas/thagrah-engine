@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ثغرة · تحليل المخطط</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A1D23; --panel: #0F262D; --card: #132E36; --line: #24404A;
+    --text: #E6F1F3; --muted: #8FB3BA; --cyan: #37C6E0;
+    --crit: #FF4D5E; --high: #F2994A; --med: #F2C94C; --ok: #3DDC97;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 'IBM Plex Sans Arabic', system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; gap: 10px; align-items: baseline; }
+  .brand b { font-size: 22px; } .brand span { color: var(--muted); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn { display: inline-block; }
+  select, button, .btn { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; cursor: pointer; }
+  button.primary { background: var(--cyan); color: #04141A; border-color: var(--cyan); font-weight: 700; }
+  button:disabled { opacity: .5; cursor: wait; }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .chip.local { color: var(--ok); border-color: #1f5c48; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 0; min-height: calc(100vh - 62px); }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+  .stage { padding: 14px; direction: ltr; }
+  .planwrap { position: relative; width: 100%; max-width: 1100px; margin: 0 auto; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #0d2229; }
+  .planwrap img { display: block; width: 100%; height: auto; }
+  svg.ov { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+  .hint { direction: rtl; color: var(--muted); font-size: 13px; text-align: center; margin: 8px 0 0; }
+  .camrow { direction: rtl; display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+  .camrow input[type=range] { width: 260px; }
+  aside { border-inline-start: 1px solid var(--line); background: var(--panel); padding: 14px; overflow-y: auto; max-height: calc(100vh - 62px); }
+  .sum { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .sev { display: inline-block; border-radius: 6px; padding: 0 8px; font-size: 12px; font-weight: 700; color: #04141A; }
+  .sev.c { background: var(--crit); } .sev.h { background: var(--high); } .sev.m { background: var(--med); }
+  .f { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
+  .f.sel { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan) inset; }
+  .f h3 { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+  .f .id { color: var(--muted); font-size: 12px; font-family: monospace; }
+  .f .meta { color: var(--muted); font-size: 12px; }
+  .f .body { display: none; margin-top: 8px; font-size: 14px; }
+  .f.sel .body { display: block; }
+  .f .body p { margin: 4px 0; } .f .body b { color: var(--cyan); font-weight: 600; }
+  .ref { color: var(--muted); font-size: 12px; border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 6px; }
+  .empty { color: var(--muted); text-align: center; padding: 30px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>ثغرة</b><span>المرحلة 1 · تحليل المخطط قبل الاعتماد</span></div>
+  <div class="controls">
+    <select id="scene" aria-label="المخطط"></select>
+    <button id="narrate" class="primary" title="يكتب السبب والسيناريو والإجراء بنموذج علّام السعودي على هذا الجهاز">كتابة الشرح بنموذج علّام</button>
+    <label class="btn" for="upload">رفع مخطط</label><input type="file" id="upload" accept="image/*" hidden>
+    <button id="addcam">+ كاميرا</button>
+    <button id="reset">إعادة الكاميرات</button>
+    <span class="chip local" id="local">يعمل محلياً · بدون سحابة</span>
+    <span class="chip" id="timing"></span>
+  </div>
+</header>
+<main>
+  <section class="stage">
+    <div class="planwrap" id="wrap">
+      <img id="plan" alt="المخطط">
+      <svg class="ov" id="ov" viewBox="0 0 800 500" preserveAspectRatio="none"></svg>
+    </div>
+    <p class="hint">اسحب أي كاميرا لتحريكها، واستخدم عجلة الفأرة أو الشريط لتدويرها. الثغرات تُحسب من جديد فوراً.</p>
+    <div class="camrow"><span id="camname">اختر كاميرا</span><input type="range" id="angle" min="-180" max="180" step="5" disabled><span id="angleval"></span></div>
+  </section>
+  <aside>
+    <div class="sum" id="sum"></div>
+    <div id="list"><div class="empty">جارٍ التحليل…</div></div>
+  </aside>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const SEV = { 'حرج': ['c', '#FF4D5E'], 'عالٍ': ['h', '#F2994A'], 'متوسط': ['m', '#F2C94C'] };
+let scene = null, cams = [], original = [], result = null, selFinding = null, selCam = null, narrateOn = false, timer = null, uploaded = false;
+
+function el(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const pts = arr => arr.map(p => p.join(',')).join(' ');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function loadScenes() {
+  const list = await (await fetch('/scenes')).json();
+  $('#scene').innerHTML = list.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  const want = new URLSearchParams(location.search).get('scene');
+  if (want && list.some(s => s.id === want)) $('#scene').value = want;
+  await loadScene($('#scene').value);
+}
+
+async function loadScene(id) {
+  uploaded = false;
+  scene = await (await fetch(`/scenes/${id}`)).json();
+  cams = scene.cameras.map(c => ({ ...c }));
+  original = cams.map(c => ({ ...c }));
+  // ?cams=C1:240:100:90,C2:... overrides camera poses (used to record demo videos)
+  const q = new URLSearchParams(location.search).get('cams');
+  if (q) q.split(',').forEach(s => { const [id, x, y, a] = s.split(':'); const c = cams.find(k => k.id === id); if (c) Object.assign(c, { x: +x, y: +y, angle: +a }); selCam = id; });
+  $('#plan').src = `/scenes/${id}/image`;
+  selFinding = null; selCam = null; narrateOn = false;
+  updateCamUI();
+  await run();
+}
+
+async function run() {
+  const t0 = performance.now();
+  const body = { ...(uploaded ? { scene } : { scene_id: scene.meta.id }), cameras: cams.map(({ id, name, x, y, angle, fov, range_m }) => ({ id, name, x, y, angle, fov, range_m })), narrate: narrateOn };
+  const r = await fetch('/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  result = await r.json();
+  const ms = Math.round(performance.now() - t0);
+  $('#timing').textContent = `${result.meta.total_findings} ثغرة · ${ms} ms` + (result.meta.narration === 'allam' ? ' · النص: علّام' : result.meta.narration === 'partial' ? ' · النص: علّام جزئياً' : '');
+  if (selFinding && !result.findings.some(f => f.key === selFinding)) selFinding = null;
+  draw(); list();
+}
+
+function schedule() { clearTimeout(timer); timer = setTimeout(run, 120); }
+
+function draw() {
+  const ov = $('#ov'); ov.innerHTML = '';
+  const g = el('g', {}, ov);
+  // camera views
+  for (const [cid, poly] of Object.entries(result.coverage)) {
+    el('polygon', { points: pts(poly), fill: 'rgba(55,198,224,.16)', stroke: 'rgba(55,198,224,.55)', 'stroke-width': .8 }, g);
+  }
+  // selected finding evidence
+  const f = result.findings.find(x => x.key === selFinding);
+  if (f) {
+    const ev = f.evidence || {};
+    if (ev.polygon && ev.polygon.length > 2) el('polygon', { points: pts(ev.polygon), fill: 'rgba(255,77,94,.35)', stroke: '#FF4D5E', 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, g);
+    if (ev.path && ev.path.length > 1) el('polyline', { points: pts(ev.path), fill: 'none', stroke: '#FF4D5E', 'stroke-width': 3, 'stroke-dasharray': '7 5', 'stroke-linecap': 'round' }, g);
+    const pc = f.monitor && f.monitor.proposed_camera;
+    if (pc) {
+      const a = pc.angle * Math.PI / 180;
+      el('circle', { cx: pc.x, cy: pc.y, r: 7, fill: 'none', stroke: '#3DDC97', 'stroke-width': 2, 'stroke-dasharray': '3 2' }, g);
+      el('line', { x1: pc.x, y1: pc.y, x2: pc.x + Math.cos(a) * 18, y2: pc.y + Math.sin(a) * 18, stroke: '#3DDC97', 'stroke-width': 2 }, g);
+    }
+  }
+  // finding markers
+  result.findings.forEach((x, i) => {
+    const [cls, col] = SEV[x.severity] || ['m', '#F2C94C'];
+    const m = el('g', { style: 'cursor:pointer' }, g);
+    el('circle', { cx: x.x, cy: x.y, r: x.key === selFinding ? 11 : 8.5, fill: col, stroke: '#04141A', 'stroke-width': 1.5 }, m);
+    const t = el('text', { x: x.x, y: x.y + 3.6, 'text-anchor': 'middle', 'font-size': 9.5, 'font-weight': 700, fill: '#04141A', 'font-family': 'monospace' }, m);
+    t.textContent = i + 1;
+    m.addEventListener('click', () => select(x.key));
+  });
+  // cameras (draggable)
+  cams.forEach(c => {
+    const a = c.angle * Math.PI / 180;
+    const cg = el('g', { style: 'cursor:grab' }, g);
+    el('line', { x1: c.x, y1: c.y, x2: c.x + Math.cos(a) * 22, y2: c.y + Math.sin(a) * 22, stroke: '#37C6E0', 'stroke-width': 3, 'stroke-linecap': 'round' }, cg);
+    el('circle', { cx: c.x, cy: c.y, r: c.id === selCam ? 9 : 7, fill: '#0A1D23', stroke: '#37C6E0', 'stroke-width': 3 }, cg);
+    const t = el('text', { x: c.x, y: c.y - 12, 'text-anchor': 'middle', 'font-size': 10, fill: '#37C6E0', 'font-weight': 700, 'font-family': 'monospace' }, cg);
+    t.textContent = c.id;
+    cg.addEventListener('pointerdown', ev => startDrag(ev, c));
+    cg.addEventListener('wheel', ev => { ev.preventDefault(); c.angle = norm(c.angle + (ev.deltaY > 0 ? 10 : -10)); selCam = c.id; updateCamUI(); draw(); schedule(); }, { passive: false });
+  });
+}
+
+function norm(a) { a = ((a + 180) % 360 + 360) % 360 - 180; return Math.round(a); }
+
+function toPlan(ev) {
+  const r = $('#ov').getBoundingClientRect();
+  return [(ev.clientX - r.left) / r.width * 800, (ev.clientY - r.top) / r.height * 500];
+}
+
+function startDrag(ev, c) {
+  ev.preventDefault();
+  selCam = c.id; updateCamUI();
+  const move = e => { const [x, y] = toPlan(e); c.x = Math.max(0, Math.min(800, Math.round(x))); c.y = Math.max(0, Math.min(500, Math.round(y))); draw(); schedule(); };
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  draw();
+}
+
+function updateCamUI() {
+  const c = cams.find(x => x.id === selCam);
+  $('#angle').disabled = !c;
+  $('#camname').textContent = c ? `${c.id} · ${c.name || ''}` : 'اختر كاميرا';
+  if (c) { $('#angle').value = c.angle; $('#angleval').textContent = `${c.angle}°`; } else $('#angleval').textContent = '';
+}
+
+$('#angle').addEventListener('input', e => {
+  const c = cams.find(x => x.id === selCam); if (!c) return;
+  c.angle = +e.target.value; $('#angleval').textContent = `${c.angle}°`; draw(); schedule();
+});
+
+function select(key) { selFinding = selFinding === key ? null : key; draw(); list(); }
+
+function list() {
+  const fs = result.findings;
+  const n = s => fs.filter(f => f.severity === s).length;
+  $('#sum').innerHTML = `<span class="sev c">حرج ${n('حرج')}</span><span class="sev h">عالٍ ${n('عالٍ')}</span><span class="sev m">متوسط ${n('متوسط')}</span>` +
+    `<span class="chip">${result.meta.law_scope ? 'يشمله نظام كاميرات المراقبة' : 'خارج نطاق نظام الكاميرات'}</span>`;
+  if (!fs.length) { $('#list').innerHTML = '<div class="empty">لا توجد ثغرات في هذا التوزيع.</div>'; return; }
+  $('#list').innerHTML = fs.map((f, i) => {
+    const [cls] = SEV[f.severity] || ['m'];
+    const mon = f.monitor || {};
+    const monTxt = mon.camera_id ? `المراقبة في المرحلة 2: الكاميرا ${esc(mon.camera_id)}` : (mon.proposed_camera ? 'المراقبة في المرحلة 2: كاميرا مقترحة (الدائرة الخضراء)' : '');
+    return `<div class="f ${f.key === selFinding ? 'sel' : ''}" data-k="${esc(f.key)}">
+      <h3><span class="sev ${cls}">${esc(f.severity)}</span>${i + 1}. ${esc(f.title)}</h3>
+      <div class="meta">${esc(f.category)} · الثقة: ${esc(f.confidence)} · <span class="id">${esc(f.rule_id)}</span></div>
+      <div class="body">
+        <p><b>السبب:</b> ${esc(f.reason)}</p>
+        <p><b>السيناريو:</b> ${esc(f.scenario)}</p>
+        <p><b>الإجراء:</b> ${esc(f.action)}</p>
+        ${f.evidence && f.evidence.path_text ? `<p><b>المسار:</b> ${esc(f.evidence.path_text)}</p>` : ''}
+        <div class="ref">${esc(f.regulation_ref)}${monTxt ? ' · ' + monTxt : ''}</div>
+      </div></div>`;
+  }).join('');
+  document.querySelectorAll('.f').forEach(d => d.addEventListener('click', () => select(d.dataset.k)));
+}
+
+$('#scene').addEventListener('change', e => { history.replaceState(null, '', `?scene=${e.target.value}`); loadScene(e.target.value); });
+$('#reset').addEventListener('click', () => { cams = original.map(c => ({ ...c })); selCam = null; updateCamUI(); run(); });
+$('#narrate').addEventListener('click', async () => {
+  const b = $('#narrate'); b.disabled = true; const old = b.textContent; b.textContent = 'علّام يكتب…';
+  narrateOn = true;
+  try { await run(); } finally { b.disabled = false; b.textContent = old; }
+});
+$('#upload').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  $('#timing').textContent = 'القارئ يقرأ المخطط… (حتى دقيقة)';
+  $('#list').innerHTML = '<div class="empty">نموذج الرؤية يقرأ الغرف والأبواب والسور…</div>';
+  const fd = new FormData(); fd.append('image', file);
+  const r = await fetch('/read', { method: 'POST', body: fd });
+  if (!r.ok) { $('#timing').textContent = 'تعذّرت قراءة المخطط: ' + (await r.text()).slice(0, 120); return; }
+  const res = await r.json();
+  scene = res.scene; scene.meta.id = 'upload'; uploaded = true;
+  $('#plan').src = URL.createObjectURL(file);
+  cams = []; original = []; selFinding = null; selCam = null; narrateOn = false;
+  updateCamUI(); e.target.value = '';
+  await run();
+  $('#timing').textContent = `مسودة: ${scene.rooms.length} غرفة/منطقة، ${scene.doors.length} باب · أضف الكاميرات بزر «+ كاميرا» واسحبها`;
+});
+$('#addcam').addEventListener('click', () => {
+  let n = cams.length + 1; while (cams.some(c => c.id === `C${n}`)) n++;
+  cams.push({ id: `C${n}`, name: 'كاميرا جديدة', x: 400, y: 250, angle: 90 });
+  selCam = `C${n}`; updateCamUI(); draw(); schedule();
+});
+loadScenes();
+</script>
+</body>
+</html>
